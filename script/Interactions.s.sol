@@ -1,51 +1,39 @@
-//SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
 
-import {Script} from "forge-std/Script.sol";
+import {Script, console} from "forge-std/Script.sol";
+import {DevOpsTools} from "foundry-devops/src/DevOpsTools.sol";
 import {BasicNft} from "../src/BasicNft.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {stdJson} from "../lib/forge-std/src/StdJson.sol";
+import {MoodNft} from "../src/MoodNft.sol";
 
 contract MintBasicNft is Script {
-    string public constant PUG =
-        "https://ipfs.io/ipfs/QmSEDJ7zbD2QVAchf8QCEbLTCtebK713veCiz1eLZCibhE?filename=ipfs.json";
-
-    // Wklej funkcje getDeployedContractAddress() i bytesToAddress() tutaj
-
-    function getDeployedContractAddress() private view returns (address) {
-        string memory path = string.concat(
-            vm.projectRoot(),
-            "/broadcast/DeployBasicNft.s.sol/",
-            Strings.toString(block.chainid),
-            "/run-latest.json"
-        );
-        string memory json = vm.readFile(path);
-        bytes memory contractAddress = stdJson.parseRaw(
-            json,
-            ".transactions[0].contractAddress"
-        );
-        return (bytesToAddress(contractAddress));
-    }
-
-    function bytesToAddress(
-        bytes memory bys
-    ) private pure returns (address addr) {
-        assembly {
-            addr := mload(add(bys, 32))
-        }
-    }
-
-    // Koniec wklejania funkcji getDeployedContractAddress() i bytesToAddress()
+    string public constant PUG_URI =
+        "ipfs://bafybeig37ioir76s7mg5oobetncojcm3c3hxasyd4rvid4jqhy4gkaheg4/?filename=0-PUG.json";
+    uint256 deployerKey;
 
     function run() external {
-        // Wywołaj getDeployedContractAddress() zamiast DevOpsTools.get_most_recent_deployment()
-        address mostRecentlyDeployed = getDeployedContractAddress();
-        mintNftOnContract(mostRecentlyDeployed);
+        address mostRecentlyDeployedBasicNft = DevOpsTools
+            .get_most_recent_deployment("BasicNft", block.chainid);
+        mintNftOnContract(mostRecentlyDeployedBasicNft);
     }
 
-    function mintNftOnContract(address contractAddress) public {
+    function mintNftOnContract(address basicNftAddress) public {
         vm.startBroadcast();
-        BasicNft(contractAddress).mintNft(PUG);
+        BasicNft(basicNftAddress).mintNft(PUG_URI);
+        vm.stopBroadcast();
+    }
+}
+
+contract MintMoodNft is Script {
+    function run() external {
+        address mostRecentlyDeployedBasicNft = DevOpsTools
+            .get_most_recent_deployment("MoodNft", block.chainid);
+        mintNftOnContract(mostRecentlyDeployedBasicNft);
+    }
+
+    function mintNftOnContract(address moodNftAddress) public {
+        vm.startBroadcast();
+        MoodNft(moodNftAddress).mintNft();
         vm.stopBroadcast();
     }
 }
